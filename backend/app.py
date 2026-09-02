@@ -147,10 +147,34 @@ def stats():
     )
 
 
-# TODO sesion 1: GET /api/data
-#
-# Devuelve registros individuales, con filtro opcional por colonia y un limite.
-# Un filtro sin coincidencias NO es un error: responde 200 con lista vacia.
+# api data
+@app.get("/api/data")
+def data():
+    """Registros individuales, con filtro opcional por colonia."""
+    neighborhood = request.args.get("neighborhood")
+
+    try:
+        limit = int(request.args.get("limit", DEFAULT_LIMIT))
+    except ValueError:
+        limit = DEFAULT_LIMIT
+    limit = max(1, min(limit, MAX_LIMIT))
+
+    filtrado = df
+    if neighborhood:
+        filtrado = filtrado[filtrado["Neighborhood"] == neighborhood]
+
+    # Un filtro sin coincidencias devuelve una lista vacia con 200, no un error.
+    # Una busqueda vacia es un resultado legitimo; un error es que algo salio mal.
+    total = int(len(filtrado))
+    pagina = filtrado.head(limit)[EXPOSED_COLUMNS]
+
+    return jsonify(
+        {
+            "count": int(len(pagina)),
+            "total_matching": total,
+            "rows": pagina.to_dict(orient="records"),
+        }
+    )
 
 
 if __name__ == "__main__":
