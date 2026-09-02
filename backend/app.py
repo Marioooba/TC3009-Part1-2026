@@ -54,7 +54,8 @@ app = Flask(__name__)
 # y la API desde el mismo origen, y entonces no hay dos origenes que reconciliar.
 # TODO sesion 1: escribe aqui las dos lineas que autorizan al tablero.
 #                Sin ellas el tablero no va a poder pedir datos.
-
+ORIGEN_DESARROLLO = re.compile(r"^http://[A-Za-z0-9.\-]+:3000$")
+CORS(app, origins=[ORIGEN_DESARROLLO])
 # ATAJO-P1: el CSV se carga completo en memoria al arrancar y nunca se recarga.
 #           Alcanza para 1460 filas y hace la sesion 1 legible.
 #           Parte 2 -> base de datos, consultas, paginacion real.
