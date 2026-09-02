@@ -71,14 +71,80 @@ def health():
     return jsonify({"status": "ok", "api_version": API_VERSION})
 
 
-# TODO sesion 1: GET /api/stats
-#
-# Devuelve los agregados del dataset. Alimenta las graficas del tablero.
-# El contrato exacto esta en docs/api-contrato.md.
-#
-# Acepta un parametro opcional neighborhood que acota count, target y
-# by_overall_qual. by_neighborhood se queda global a proposito: es el eje de
-# comparacion, y filtrarlo a una sola colonia lo dejaria sin sentido.
+# api stats
+@app.get("/api/stats")
+def stats():
+    """Agregados del dataset. Alimenta las graficas del tablero.
+
+    Si llega el parametro neighborhood, las estadisticas del target y el desglose
+    por calidad se calculan solo sobre esa colonia. El desglose por colonia se
+    mantiene global a proposito: es el eje de comparacion, y filtrarlo a una sola
+    colonia lo dejaria sin sentido.
+    """
+    neighborhood = request.args.get("neighborhood")
+    alcance = df[df["Neighborhood"] == neighborhood] if neighborhood else df
+
+    # Siempre sobre df completo, nunca sobre el alcance filtrado.
+    por_colonia = (
+        df.groupby("Neighborhood")[TARGET_COLUMN]
+        .agg(["count", "mean"])
+        .reset_index()
+        .sort_values("mean", ascending=False)
+    )
+    by_neighborhood = [
+        {
+            "neighborhood": fila["Neighborhood"],
+            "count": int(fila["count"]),
+            "mean_price": round(float(fila["mean"]), 1),
+        }
+        for _, fila in por_colonia.iterrows()
+    ]
+
+    # Una colonia sin registros no es un error: es un resultado vacio.
+    if len(alcance) == 0:
+        return jsonify(
+            {
+                "count": 0,
+                "scope": neighborhood,
+                "target": None,
+                "by_neighborhood": by_neighborhood,
+                "by_overall_qual": [],
+            }
+        )
+
+    precios = alcance[TARGET_COLUMN]
+    por_calidad = (
+        alcance.groupby("OverallQual")[TARGET_COLUMN]
+        .agg(["count", "mean"])
+        .reset_index()
+        .sort_values("OverallQual")
+    )
+
+    # Los tipos de numpy no son serializables a JSON: int() y float() no son
+    # adorno. Sin ellos el servidor truena con
+    # "Object of type int64 is not JSON serializable".
+    return jsonify(
+        {
+            "count": int(len(alcance)),
+            "scope": neighborhood,
+            "target": {
+                "name": TARGET_COLUMN,
+                "min": int(precios.min()),
+                "mean": round(float(precios.mean()), 1),
+                "median": int(precios.median()),
+                "max": int(precios.max()),
+            },
+            "by_neighborhood": by_neighborhood,
+            "by_overall_qual": [
+                {
+                    "overall_qual": int(fila["OverallQual"]),
+                    "count": int(fila["count"]),
+                    "mean_price": round(float(fila["mean"]), 1),
+                }
+                for _, fila in por_calidad.iterrows()
+            ],
+        }
+    )
 
 
 # TODO sesion 1: GET /api/data
