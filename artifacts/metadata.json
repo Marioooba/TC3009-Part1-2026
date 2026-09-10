@@ -1,0 +1,139 @@
+{
+  "model_version": "1.0.0",
+  "trained_at": "2026-09-10T01:19:24Z",
+  "sklearn_version": "1.6.1",
+  "artifact_hash": "3ecfe3b86401",
+  "algorithm": "RandomForestRegressor(n_estimators=100)",
+  "target": "SalePrice",
+  "target_transform": "log1p",
+  "features": [
+    {
+      "name": "GrLivArea",
+      "type": "num",
+      "min": 334.0,
+      "max": 5642.0,
+      "median": 1464.0
+    },
+    {
+      "name": "OverallQual",
+      "type": "num",
+      "min": 1.0,
+      "max": 10.0,
+      "median": 6.0
+    },
+    {
+      "name": "YearBuilt",
+      "type": "num",
+      "min": 1872.0,
+      "max": 2010.0,
+      "median": 1973.0
+    },
+    {
+      "name": "TotalBsmtSF",
+      "type": "num",
+      "min": 0.0,
+      "max": 6110.0,
+      "median": 991.5
+    },
+    {
+      "name": "GarageCars",
+      "type": "num",
+      "min": 0.0,
+      "max": 4.0,
+      "median": 2.0
+    },
+    {
+      "name": "FullBath",
+      "type": "num",
+      "min": 0.0,
+      "max": 3.0,
+      "median": 2.0
+    },
+    {
+      "name": "BedroomAbvGr",
+      "type": "num",
+      "min": 0.0,
+      "max": 8.0,
+      "median": 3.0
+    },
+    {
+      "name": "LotArea",
+      "type": "num",
+      "min": 1300.0,
+      "max": 215245.0,
+      "median": 9478.5
+    },
+    {
+      "name": "Neighborhood",
+      "type": "cat",
+      "allowed": [
+        "Blmngtn",
+        "Blueste",
+        "BrDale",
+        "BrkSide",
+        "ClearCr",
+        "CollgCr",
+        "Crawfor",
+        "Edwards",
+        "Gilbert",
+        "IDOTRR",
+        "MeadowV",
+        "Mitchel",
+        "NAmes",
+        "NPkVill",
+        "NWAmes",
+        "NoRidge",
+        "NridgHt",
+        "OldTown",
+        "SWISU",
+        "Sawyer",
+        "SawyerW",
+        "Somerst",
+        "StoneBr",
+        "Timber",
+        "Veenker"
+      ]
+    },
+    {
+      "name": "KitchenQual",
+      "type": "cat",
+      "allowed": [
+        "Ex",
+        "Fa",
+        "Gd",
+        "TA"
+      ]
+    }
+  ],
+  "splits": {
+    "train": 1022,
+    "validation": 219,
+    "test": 219
+  },
+  "metrics": {
+    "validation": {
+      "rmse": 25003.3,
+      "mae": 17132.3,
+      "r2": 0.9005
+    },
+    "test": {
+      "rmse": 27708.0,
+      "mae": 17333.3,
+      "r2": 0.8991
+    }
+  },
+  "feature_importances": {
+    "OverallQual": 0.5794,
+    "GrLivArea": 0.133,
+    "TotalBsmtSF": 0.0758,
+    "GarageCars": 0.073,
+    "LotArea": 0.0475,
+    "YearBuilt": 0.0463,
+    "Neighborhood": 0.0238,
+    "KitchenQual": 0.0093,
+    "BedroomAbvGr": 0.0077,
+    "FullBath": 0.0042
+  },
+  "model_comparison": [],
+  "hyperparameter_experiments": []
+}

@@ -1,0 +1,16 @@
+{
+  "input": {
+    "GrLivArea": 1144,
+    "OverallQual": 5,
+    "YearBuilt": 1963,
+    "TotalBsmtSF": 1144,
+    "GarageCars": 1,
+    "FullBath": 1,
+    "BedroomAbvGr": 3,
+    "LotArea": 9204,
+    "Neighborhood": "NAmes",
+    "KitchenQual": "TA"
+  },
+  "prediction": 140682.35,
+  "model_version": "1.0.0"
+}
