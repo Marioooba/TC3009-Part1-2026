@@ -298,7 +298,7 @@ tu código **viaja** hasta donde se ejecuta. No es una molestia del curso, es el
 Aquí empieza el ciclo que vas a usar el resto del módulo:
 
 ```
-   1. Editas backend/app.py en VS Code, en tu laptop
+   1. Editas backend/s1_tablero.py en VS Code, en tu laptop
    2. git add · git commit · git push
    3. En la consola de la instancia:  ./setup/run sync
    4. Y para que corra el codigo nuevo:  ./setup/run restart
@@ -317,36 +317,42 @@ plano, así que tu única consola queda libre:
 > `start` los deja corriendo detrás y te devuelve el prompt. Si algo no responde:
 > `./setup/run logs`.
 
-**En tu computadora**, abre `backend/app.py` en VS Code. Vas a encontrar `/api/health` ya
-escrito como referencia de la forma, y dos `TODO` por llenar.
+**En tu computadora**, abre `backend/s1_tablero.py` en VS Code. Tiene dos `TODO` por llenar.
+
+Fíjate en la estructura del backend antes de escribir:
+
+```
+   backend/
+   ├── app.py           el ensamblador. NO lo edites
+   ├── s1_tablero.py    ← lo de hoy
+   └── s2_modelo.py     la sesión que viene
+```
+
+`app.py` descubre solo los módulos `sN_*.py` y registra sus rutas. Por eso cada sesión vive
+en su propio archivo: cuando traigas el material de la siguiente, llegan archivos **nuevos**
+y nunca hay que fusionar cambios sobre lo que ya escribiste.
 
 ---
 
-### Primero: autoriza al tablero (CORS)
+### Antes de escribir: mira lo que ya está resuelto
 
-**En tu computadora**, busca el `TODO` de CORS —arriba del archivo— y pon esto en su lugar:
+Abre `backend/app.py` —sólo para leerlo— y busca estas dos líneas:
 
 ```python
 ORIGEN_DESARROLLO = re.compile(r"^http://[A-Za-z0-9.\-]+:3000$")
 CORS(app, origins=[ORIGEN_DESARROLLO])
 ```
 
-Ahora mismo no vas a notar nada. En veinte minutos, cuando el tablero intente pedir datos,
-esta línea va a ser la diferencia entre que funcione y que no. Al rato lo vemos con el
-problema delante.
+Es lo que autoriza a tu tablero a pedirle datos a tu API. Al rato lo vemos con el problema
+delante; por ahora sólo ten presente que existe y que **no lo tienes que escribir**.
 
----
+### `/api/health` ya responde — míralo antes de escribir
 
-### `/api/health` ya está — míralo antes de escribir
+Vive en `app.py` y ya funciona. Su forma es la que van a tener los tuyos: un decorador con la
+ruta, una función, y un `jsonify` que devuelve **exactamente lo que promete el contrato**.
 
-```python
-@app.get("/api/health")
-def health():
-    return jsonify({"status": "ok", "api_version": API_VERSION})
-```
-
-Tres piezas: un decorador con la ruta, una función, y un `jsonify` que devuelve **exactamente
-lo que promete el contrato**. Los dos que faltan tienen la misma forma.
+La única diferencia en tu módulo es que el decorador es `@bp.get(...)` en lugar de
+`@app.get(...)`: `bp` es el blueprint de este módulo, y `app.py` lo registra solo.
 
 Compruébalo **en la instancia**:
 
@@ -364,7 +370,7 @@ consultar.
 **En tu computadora**, reemplaza el `TODO` de `/api/stats` con esto:
 
 ```python
-@app.get("/api/stats")
+@bp.get("/api/stats")
 def stats():
     """Agregados del dataset. Alimenta las graficas del tablero.
 
@@ -473,7 +479,7 @@ Tres cosas que vale la pena mirar en lo que acabas de escribir:
 **En tu computadora**, reemplaza el `TODO` de `/api/data`:
 
 ```python
-@app.get("/api/data")
+@bp.get("/api/data")
 def data():
     """Registros individuales, con filtro opcional por colonia."""
     neighborhood = request.args.get("neighborhood")
@@ -695,14 +701,30 @@ igual. Por eso hoy importaba el contrato: mañana cambia lo de adentro y el cont
 
 ## Si te quedaste atrás
 
-Desde tu laptop:
+**En tu computadora:**
 
 ```bash
-git reset --hard s1
+./setup/run recuperar 1 --si
 git push --force
 ```
 
-Y en la instancia: `./setup/run sync`.
+**Y en la instancia:** `./setup/run sync && ./setup/run restart`
+
+
+Tres cosas que ese comando garantiza, y por eso puedes usarlo sin miedo:
+
+- **No pierdes nada.** Lo que tenías queda en una rama `respaldo/<fecha>`.
+- **Conservas tu artefacto.** No tienes que volver a correr el notebook.
+- **Se actualiza sola.** Si tu copia de `setup/` es vieja, trae la del curso primero.
+
+> **¿Y si `recuperar` ni siquiera existe en tu copia?** Tres líneas de git puro lo arreglan
+> desde cualquier estado:
+>
+> ```bash
+> git fetch https://github.com/vsosahdz/TC3009-Part1-2026.git main
+> git checkout FETCH_HEAD -- setup/
+> ./setup/run recuperar 1 --si
+> ```
 
 Te deja en el estado correcto al cierre de esta sesión. Sin vergüenza: es más rápido que
 depurar en vivo, y es para lo que existen los checkpoints.

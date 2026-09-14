@@ -1,42 +1,42 @@
-"""API del tablero de precios de vivienda.
+"""Ensamblador de la API.
 
-Sesion 1: sirve agregados y registros del dataset. Todavia no hay modelo.
-El contrato que implementa este archivo esta en docs/api-contrato.md.
+Este archivo NO cambia de una sesion a otra, y eso es a proposito.
+
+Cada sesion agrega un modulo propio --s1_tablero.py, s2_modelo.py...-- y este
+ensamblador los descubre y los registra solo. Asi, cuando traes el material de
+la sesion siguiente llegan archivos NUEVOS: nunca hay que fusionar cambios
+sobre codigo que ya escribiste, y no hay conflictos con tu version.
+
+    backend/
+    ├── app.py           esto. el ensamblador. no lo edites
+    ├── s1_tablero.py    sesion 1: stats y data
+    ├── s2_modelo.py     sesion 2: el modelo y las predicciones  (*)
+    └── s3_producto.py   sesion 3: historial y explicaciones     (*)
+
+(*) Los modulos marcados NO existen todavia: cada uno llega al empezar su
+    sesion, cuando corres
+
+        ./setup/run actualizar 2      (y luego 3, y luego 4)
+
+    Si buscas s2_modelo.py y no esta, no falta nada: es que no has traido el
+    material de esa sesion. Mientras tanto, la aplicacion funciona con los
+    modulos que si existen.
+
+Para correrlo:  ./setup/run start
 """
 
-import os
+import importlib
+import pathlib
 import re
+import sys
 
-import pandas as pd
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify
 from flask_cors import CORS
 
 API_VERSION = "1.0.0"
 
-# Las diez features que va a consumir el modelo en la sesion 2, mas Id y el target.
-# El tablero y el predictor hablan del mismo vocabulario desde el dia uno.
-FEATURE_COLUMNS = [
-    "GrLivArea",
-    "OverallQual",
-    "YearBuilt",
-    "TotalBsmtSF",
-    "GarageCars",
-    "FullBath",
-    "BedroomAbvGr",
-    "Neighborhood",
-    "LotArea",
-    "KitchenQual",
-]
-TARGET_COLUMN = "SalePrice"
-EXPOSED_COLUMNS = ["Id"] + FEATURE_COLUMNS + [TARGET_COLUMN]
-
-DEFAULT_LIMIT = 20
-MAX_LIMIT = 200
-
-DATA_PATH = os.environ.get(
-    "DATA_PATH",
-    os.path.join(os.path.dirname(__file__), "..", "data", "train.csv"),
-)
+AQUI = pathlib.Path(__file__).resolve().parent
+sys.path.insert(0, str(AQUI))
 
 app = Flask(__name__)
 
@@ -66,8 +66,14 @@ df = pd.read_csv(DATA_PATH)
 def health():
     """Estado del servicio.
 
-    En la sesion 2 esta respuesta crece con model_version, sklearn_version y
-    artifact_hash, cuando exista un artefacto del que informar.
+    Cada modulo puede aportar informacion definiendo una funcion estado().
+    Asi, cuando la sesion 2 agrega el modelo, este endpoint empieza a reportar
+    la version del artefacto sin que haya que tocar este archivo.
+
+    Si el estado() de un modulo falla, se reporta ese modulo como roto y los
+    demas siguen respondiendo. Un chequeo de salud que se cae entero porque
+    una parte esta a medias no sirve para nada: justo cuando algo esta mal es
+    cuando necesitas que te diga QUE esta mal.
     """
     return jsonify({"status": "ok", "api_version": API_VERSION})
 

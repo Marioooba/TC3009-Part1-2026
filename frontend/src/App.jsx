@@ -77,7 +77,7 @@ export default function App() {
         <div className="estado error">
           <p>No se pudo hablar con la API: {error}</p>
           <p>
-            Revisa que el backend este corriendo en el puerto 5001 y que la
+            Revisa que el backend este corriendo en el puerto 8080 y que la
             consola del navegador no muestre un error de CORS.
           </p>
         </div>

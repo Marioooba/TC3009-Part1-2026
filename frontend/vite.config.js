@@ -4,8 +4,8 @@ import react from "@vitejs/plugin-react";
 // NO hay proxy hacia el backend, a proposito.
 //
 // Un proxy haria que el navegador viera un solo origen y CORS desaparecia del
-// panorama. Queremos justo lo contrario: que el frontend (5173) y el backend
-// (5001) sean dos origenes distintos, para que CORS sea visible y se pueda
+// panorama. Queremos justo lo contrario: que el frontend (3000) y el backend
+// (8080) sean dos origenes distintos, para que CORS sea visible y se pueda
 // explicar con el problema delante.
 //
 // En produccion el problema no existe: un solo contenedor sirve las dos cosas.

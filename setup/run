@@ -13,8 +13,12 @@
 #   ./setup/run logs         ultimas lineas de los dos registros
 #   ./setup/run logs api     sigue el registro de la API en vivo
 #   ./setup/run sync         trae los cambios que empujaste desde tu laptop
+#   ./setup/run actualizar 2 trae el material para empezar la sesion 2
+#   ./setup/run recuperar 1  te deja como al cerrar la sesion 1 (descarta tu avance)
+#                            agrega --si para no preguntar
 #   ./setup/run url          en que direccion esta tu tablero
 #   ./setup/run doctor       revisa el entorno y dice que falta
+#   ./setup/run test         corre el test de paridad notebook <-> servicio
 #
 #   ./setup/run api          arranca la API en PRIMER plano (para depurar)
 #   ./setup/run web          arranca el tablero en PRIMER plano (para depurar)
@@ -212,6 +216,299 @@ case "${1:-}" in
     cd "$REPO_DIR" && git pull
     echo
     echo "  Para que los cambios se vean:  ./setup/run restart"
+    ;;
+
+  actualizar)
+    # Trae el material que necesitas para empezar una sesion, sin pisar el
+    # codigo que ya escribiste.
+    #
+    #   ./setup/run actualizar 2    prepara la sesion 2
+    #
+    # El esqueleto de la sesion N vive en el checkpoint s(N-1): es el estado en
+    # que termina la sesion anterior. Leer de 'main' no serviria, porque main
+    # apunta al estado de arranque y ahi el esqueleto todavia no existe.
+    #
+    # Quien es dueño de que archivo esta en setup/archivos-del-curso.txt.
+    sesion="${2:-}"
+    if [[ -z "$sesion" ]]; then
+      mal "dime que sesion vas a empezar:  ./setup/run actualizar 2"
+      exit 1
+    fi
+    if ! [[ "$sesion" =~ ^[1-4]$ ]]; then
+      mal "la sesion debe ser un numero del 1 al 4"
+      exit 1
+    fi
+
+    CURSO="https://github.com/vsosahdz/TC3009-Part1-2026.git"
+
+    # Se lee de la RAMA remota del curso, no de un tag local.
+    #
+    # Un tag local se queda pegado: si hiciste fork cuando ese tag apuntaba a
+    # otro commit, ningun 'git fetch --tags' lo mueve, y el material nuevo no
+    # te llega nunca. Una rama remota se actualiza siempre al hacer fetch.
+    REF="curso/estado/s$((sesion - 1))"
+
+    cd "$REPO_DIR"
+
+    if ! git remote get-url curso >/dev/null 2>&1; then
+      git remote add curso "$CURSO"
+      ok "remoto 'curso' agregado"
+    fi
+
+    echo "  trayendo el material del curso ($REF)..."
+    # --force por si acaso: reescribe tags viejos que hayan quedado pegados.
+    git fetch -q --force --tags curso \
+      || { mal "no se pudo contactar al repositorio del curso"; exit 1; }
+
+    if ! git rev-parse -q --verify "$REF" >/dev/null; then
+      mal "el curso no ha publicado el estado de la sesion $sesion todavia"
+      echo "        (busque la rama $REF)"
+      exit 1
+    fi
+
+    if [[ -n "$(git status --porcelain)" ]]; then
+      aviso "tienes cambios sin confirmar. Se van a conservar, pero conviene"
+      echo "        hacer commit antes de actualizar."
+      echo
+    fi
+
+    # La tabla de propiedad se lee del CURSO, no de tu copia local.
+    #
+    # Son dos razones, y la segunda es un bug que costo encontrar:
+    #
+    #   1. La tabla es [DEL CURSO]: la version buena es siempre la del curso.
+    #      Si una sesion nueva cambia de dueño un archivo, ese cambio tiene que
+    #      aplicar YA, no a partir de la proxima vez.
+    #
+    #   2. Leyendola del disco, este mismo bucle la estaba pisando a media
+    #      lectura. 'git checkout -- setup/' reemplaza el archivo --inodo
+    #      nuevo-- mientras el 'while read' sigue leyendo el inodo viejo. El
+    #      resultado es que la tabla nueva no surtia efecto hasta correr
+    #      'actualizar' DOS veces, y el sintoma --un archivo que dice
+    #      "conservado" cuando debia actualizarse-- no apunta a la causa por
+    #      ningun lado.
+    #
+    # Leerla en memoria antes de tocar nada elimina las dos cosas.
+    LISTA_TXT="$(git show "$REF:setup/archivos-del-curso.txt" 2>/dev/null)" \
+      || LISTA_TXT="$(cat "$REPO_DIR/setup/archivos-del-curso.txt")"
+
+    seccion=""
+    traidos=0
+    conservados=0
+
+    while IFS= read -r linea || [[ -n "$linea" ]]; do
+      linea="${linea%%#*}"
+      linea="$(echo "$linea" | xargs || true)"
+      [[ -z "$linea" ]] && continue
+
+      case "$linea" in
+        "[DEL CURSO]") seccion="curso"; continue ;;
+        "[TUYOS]")     seccion="tuyo";  continue ;;
+      esac
+
+      if [[ "$seccion" == "curso" ]]; then
+        # Siempre: son archivos que tu no editas.
+        if git checkout "$REF" -- "$linea" 2>/dev/null; then
+          echo "    actualizado  $linea"
+          traidos=$((traidos + 1))
+        fi
+      else
+        # Solo si no existe: tu codigo no se toca nunca.
+        if [[ -e "$linea" ]]; then
+          echo "    conservado   $linea  (ya lo tienes)"
+          conservados=$((conservados + 1))
+        elif git checkout "$REF" -- "$linea" 2>/dev/null; then
+          echo "    nuevo        $linea"
+          traidos=$((traidos + 1))
+        fi
+      fi
+    done <<< "$LISTA_TXT"
+
+    echo
+    ok "$traidos rutas traidas del curso, $conservados conservadas tal cual"
+    echo
+    echo "  Revisa que llego:   git status"
+    echo "  Instala lo nuevo:   bash setup/bootstrap-ec2.sh"
+    echo "  Y guardalo:         git add -A && git commit -m \"material de la sesion $sesion\""
+    ;;
+
+  recuperar)
+    # Te deja en el estado en que termina una sesion, pase lo que pase.
+    #
+    #   ./setup/run recuperar 2        como al cerrar la sesion 2
+    #   ./setup/run recuperar 2 --si   sin preguntar
+    #
+    # Esta pensado para el peor caso: un repositorio en cualquier estado, con
+    # una copia vieja de estos mismos comandos, y un alumno con prisa.
+    #
+    # Tres garantias:
+    #
+    #   1. NO PIERDES NADA. Todo lo que tengas --confirmado o no-- queda en una
+    #      rama 'respaldo/<fecha>' antes de tocar nada.
+    #   2. CONSERVAS TU ARTEFACTO. artifacts/ es tuyo y se restaura despues del
+    #      reset. El curso nunca publica un artefacto, asi que sin esto un
+    #      'recuperar' costaba volver a correr el notebook.
+    #   3. LA HERRAMIENTA SE ACTUALIZA PRIMERO. Si tu copia de setup/ es vieja,
+    #      se trae la del curso y este comando se vuelve a lanzar con ella. Asi
+    #      un fork de hace tres semanas se repara igual que uno de hoy.
+    sesion="${2:-}"
+    if ! [[ "$sesion" =~ ^[0-4]$ ]]; then
+      mal "dime al final de que sesion quieres quedar:  ./setup/run recuperar 2"
+      exit 1
+    fi
+
+    CURSO="https://github.com/vsosahdz/TC3009-Part1-2026.git"
+    REF="curso/estado/s$sesion"
+
+    cd "$REPO_DIR"
+    git remote get-url curso >/dev/null 2>&1 || git remote add curso "$CURSO"
+    [[ -n "${TC3009_RELANZADO:-}" ]] || echo "  consultando el curso..."
+    git fetch -q --force --tags curso \
+      || { mal "no se pudo contactar al repositorio del curso"; exit 1; }
+
+    if ! git rev-parse -q --verify "$REF" >/dev/null; then
+      mal "el curso no ha publicado el estado de la sesion $sesion todavia"
+      exit 1
+    fi
+
+    # --- Garantia 3: la herramienta, primero ---
+    #
+    # Si tu setup/ es anterior, lo de abajo seria la version vieja de este
+    # mismo codigo. Se trae la del curso y se relanza el comando con ella.
+    # El centinela evita que esto se repita para siempre.
+    if [[ -z "${TC3009_RELANZADO:-}" ]]; then
+      git checkout -q "$REF" -- setup/ 2>/dev/null || true
+      export TC3009_RELANZADO=1
+      exec "$REPO_DIR/setup/run" recuperar "$sesion" "${3:-}"
+    fi
+
+    # --- Garantia 1: nada se pierde ---
+    sucio="$(git status --porcelain)"
+    if [[ -n "$sucio" ]]; then
+      echo
+      aviso "tienes cambios sin confirmar:"
+      echo "$sucio" | sed 's|^|        |'
+      echo
+      echo "  No se van a perder: quedan en una rama de respaldo."
+      echo
+      if [[ "${3:-}" == "--si" ]]; then
+        :
+      elif [[ -t 0 ]]; then
+        printf "  ¿Continuo? Escribe 's': "
+        read -r respuesta
+        [[ "$respuesta" == "s" ]] || { echo "  cancelado."; exit 1; }
+      else
+        mal "no hay terminal para preguntarte. Pasa --si:"
+        echo "            ./setup/run recuperar $sesion --si"
+        exit 1
+      fi
+    fi
+
+    RESPALDO="respaldo/$(date +%Y%m%d-%H%M%S)"
+    export GIT_AUTHOR_NAME="${GIT_AUTHOR_NAME:-$(git config user.name 2>/dev/null || echo Alumno)}"
+    export GIT_AUTHOR_EMAIL="${GIT_AUTHOR_EMAIL:-$(git config user.email 2>/dev/null || echo alumno@local)}"
+    export GIT_COMMITTER_NAME="$GIT_AUTHOR_NAME"
+    export GIT_COMMITTER_EMAIL="$GIT_AUTHOR_EMAIL"
+
+    if [[ -n "$sucio" ]]; then
+      git add -A
+      git commit -q -m "respaldo automatico antes de recuperar $sesion" || true
+    fi
+    git branch "$RESPALDO"
+    ok "tu trabajo quedo guardado en la rama  $RESPALDO"
+
+    # --- El reset ---
+    git reset --hard -q "$REF"
+
+    # --- Garantia 2: el artefacto es tuyo ---
+    #
+    # El curso publica artifacts/ vacio a proposito: si mandara uno, chocaria
+    # con el de cada alumno. Por eso el reset lo borra, y por eso hay que
+    # devolverlo. Son 10 minutos de Colab.
+    if git cat-file -e "$RESPALDO:artifacts/pipeline.joblib" 2>/dev/null; then
+      if git checkout "$RESPALDO" -- artifacts/ 2>/dev/null; then
+        # Y se confirma. 'git checkout <rama> -- ruta' solo deja los archivos
+        # en el indice: sin este commit, el 'git push --force' de abajo subiria
+        # un fork SIN artefacto, y el alumno lo descubriria en la instancia.
+        git commit -q -m "conservar mi artefacto tras recuperar $sesion" || true
+        ok "tu artefacto se conservo (artifacts/)"
+      else
+        aviso "no se pudo restaurar artifacts/; esta en $RESPALDO"
+      fi
+    fi
+
+    echo
+    ok "estas en el estado al cierre de la sesion $sesion"
+
+    # --- Verificacion: 'reparado' es algo que se comprueba, no que se espera ---
+    echo
+    echo "  Esto es lo que tienes ahora:"
+    for f in backend/s1_tablero.py backend/s2_modelo.py \
+             backend/s4_producto.py frontend/src/api.js \
+             frontend/src/vistas/Predecir.jsx frontend/src/vistas/Historial.jsx; do
+      [[ -f "$f" ]] || continue
+      n="$(grep -c 'TODO.*sesion' "$f" 2>/dev/null || true)"
+      if [[ "${n:-0}" == "0" ]]; then
+        printf "      %-38s resuelto\n" "$f"
+      else
+        printf "      %-38s %s TODO por llenar\n" "$f" "$n"
+      fi
+    done
+    if [[ -f artifacts/pipeline.joblib ]]; then
+      echo "      artifacts/pipeline.joblib              tu modelo, intacto"
+    else
+      echo "      artifacts/pipeline.joblib              FALTA: corre el notebook"
+    fi
+
+    echo
+    echo "  Lo que sigue:"
+    echo "      git push --force          para que tu fork quede igual"
+    echo "      ./setup/run sync          en la instancia, para traerlo"
+    echo
+    echo "  Si te arrepientes:  git reset --hard $RESPALDO"
+    ;;
+
+  test)
+    # Corre las pruebas del proyecto.
+    #
+    # Existe por la misma razon que el resto de los comandos: invocar
+    # .venv/bin/python a mano depende de en que carpeta estes parado, y el
+    # error que da --"No such file or directory"-- no dice eso.
+    exigir_entorno
+    cd "$REPO_DIR"
+
+    # Sin argumento corre TODAS las pruebas que tengas. Con nombre, solo esa:
+    #
+    #   ./setup/run test            todas
+    #   ./setup/run test paridad    solo la paridad notebook <-> servicio
+    #
+    # Que el comando sin argumento las corra todas importa: una prueba que
+    # llega en una sesion nueva y nadie invoca nunca es una prueba que no
+    # existe.
+    if [[ -z "${2:-}" ]]; then
+      salida_total=0
+      for f in "$REPO_DIR"/tests/test_*.py; do
+        [[ -e "$f" ]] || continue
+        "$REPO_DIR/.venv/bin/python" "$f" || salida_total=1
+      done
+      exit "$salida_total"
+    fi
+
+    cual="$2"
+    archivo="$REPO_DIR/tests/test_${cual}.py"
+
+    if [[ ! -f "$archivo" ]]; then
+      mal "no existe tests/test_${cual}.py"
+      echo "        Disponibles:"
+      for f in "$REPO_DIR"/tests/test_*.py; do
+        [[ -e "$f" ]] || continue
+        n="$(basename "$f" .py)"; n="${n#test_}"
+        echo "            ./setup/run test $n"
+      done
+      exit 1
+    fi
+
+    exec "$REPO_DIR/.venv/bin/python" "$archivo"
     ;;
 
   url)

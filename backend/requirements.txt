@@ -6,11 +6,20 @@
 #
 # Esto no es burocracia: es la diferencia entre "funciona en mi maquina" y
 # "funciona".
+#
+# Estas versiones tienen que poder instalarse en DOS entornos:
+#
+#   · Python 3.12, que es el que trae Ubuntu 24.04 en tu instancia
+#   · Python 3.13, que es el que usa Google Colab, donde entrenas el modelo
+#
+# Por eso numpy es 2.x y pandas 2.2.3: las versiones anteriores no tienen
+# paquetes precompilados para 3.13, y pip intenta compilarlas desde fuente y
+# falla. Si alguna vez cambias una version, comprueba las dos.
 
 Flask==3.0.3
 Flask-Cors==4.0.1
-pandas==2.2.2
-numpy==1.26.4
+pandas==2.2.3
+numpy==2.1.3
 
 # Se usan a partir de la sesion 2, pero se fijan desde ahora: la version de
 # scikit-learn con la que entrenas tiene que ser la misma con la que sirves.

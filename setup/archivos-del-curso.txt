@@ -1,0 +1,46 @@
+# Quien es dueño de que archivo.
+#
+# Lo usa  ./setup/run actualizar  para traer el material de la sesion nueva
+# sin pisar tu trabajo.
+#
+# DEL CURSO: los trae siempre, sobreescribiendo. Son archivos que tu no editas
+#            --guias, datos, andamiaje-- y que mejoran entre sesiones.
+#
+# TUYOS:     los trae SOLO SI NO EXISTEN. Si ya los escribiste, no se tocan.
+#            Aqui vive tu codigo.
+#
+# Ojo con las carpetas en [TUYOS]: la comprobacion es "existe o no existe", y
+# una carpeta existe desde que tiene un solo archivo adentro. Por eso las
+# vistas se listan una por una: si estuviera 'frontend/src/vistas/' a secas,
+# crear Tablero.jsx bastaria para que las vistas de las sesiones siguientes
+# nunca llegaran.
+
+[DEL CURSO]
+README.md
+.gitignore
+docs/
+setup/
+data/
+notebooks/
+tests/
+backend/requirements.txt
+
+# Los dos ensambladores. Ninguno de los dos lo escribes tu: descubren solos
+# los modulos y las vistas de cada sesion. Por eso cambian con el curso.
+backend/app.py
+frontend/src/main.jsx
+frontend/package.json
+frontend/vite.config.js
+frontend/index.html
+frontend/src/styles.css
+
+[TUYOS]
+backend/s1_tablero.py
+backend/s2_modelo.py
+backend/s4_producto.py
+frontend/src/api.js
+frontend/src/vistas/Tablero.jsx
+frontend/src/vistas/Predecir.jsx
+frontend/src/vistas/Historial.jsx
+frontend/src/vistas/ModelCard.jsx
+artifacts/

@@ -213,3 +213,185 @@ tbody tr:last-child td {
 .tooltip .t-linea {
   color: var(--tinta-2);
 }
+
+/* --- Pestañas del ensamblador --- */
+.pestanas {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--linea);
+  margin-bottom: 24px;
+}
+
+.pestanas button {
+  font: inherit;
+  font-size: 14px;
+  padding: 9px 16px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--tinta-2);
+  cursor: pointer;
+  margin-bottom: -1px;
+}
+
+.pestanas button:hover {
+  color: var(--tinta);
+}
+
+.pestanas button.activa {
+  color: var(--serie);
+  border-bottom-color: var(--serie);
+  font-weight: 600;
+}
+
+.subtitulo-vista {
+  margin: 0 0 20px;
+  color: var(--tinta-2);
+  font-size: 14px;
+}
+
+/* --- Sesión 3: formulario, resultado, Model Card --- */
+.dos-columnas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .dos-columnas { grid-template-columns: 1fr; }
+}
+
+.campos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.campo { display: flex; flex-direction: column; gap: 4px; }
+
+.etiqueta-campo {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--tinta-2);
+}
+
+.campo input,
+.campo select {
+  font: inherit;
+  font-size: 14px;
+  padding: 7px 10px;
+  border: 1px solid var(--eje);
+  border-radius: 8px;
+  background: var(--superficie);
+  color: var(--tinta);
+  width: 100%;
+}
+
+.ayuda-campo { font-size: 11px; color: var(--tinta-apagada); }
+
+button.primario {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  background: var(--serie);
+  color: white;
+  cursor: pointer;
+}
+
+button.primario:disabled {
+  background: var(--serie-apagada);
+  cursor: progress;
+}
+
+.precio {
+  font-size: 38px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 8px 0 16px;
+}
+
+.aviso-error {
+  border-left: 3px solid #d03b3b;
+  padding: 10px 14px;
+  background: rgba(208, 59, 59, 0.05);
+  border-radius: 0 8px 8px 0;
+  margin-bottom: 12px;
+}
+.aviso-error p { margin: 4px 0 0; font-size: 13px; color: var(--tinta-2); }
+
+.aviso-cuidado {
+  border-left: 3px solid #fab219;
+  padding: 10px 14px;
+  background: rgba(250, 178, 25, 0.07);
+  border-radius: 0 8px 8px 0;
+  margin-bottom: 12px;
+}
+.aviso-cuidado p { margin: 0; font-size: 13px; color: var(--tinta-2); }
+
+.explicacion {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--tinta-2);
+  border-top: 1px solid var(--linea);
+  padding-top: 14px;
+  margin: 14px 0;
+}
+
+.ficha {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 14px;
+  font-size: 12px;
+  margin: 0;
+}
+.ficha.ancha { font-size: 13px; gap: 8px 20px; }
+.ficha dt { color: var(--tinta-apagada); }
+.ficha dd { margin: 0; color: var(--tinta); }
+.mono { font-family: ui-monospace, monospace; }
+
+.barras { display: flex; flex-direction: column; gap: 7px; }
+.barra-fila {
+  display: grid;
+  grid-template-columns: 130px 1fr 52px;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+.barra-etiqueta { color: var(--tinta-2); }
+.barra-pista { background: var(--linea); border-radius: 4px; height: 14px; }
+.barra-relleno {
+  display: block;
+  height: 100%;
+  background: var(--serie);
+  border-radius: 4px;
+}
+.barra-valor {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--tinta-2);
+}
+
+pre {
+  font-size: 12px;
+  background: var(--plano);
+  padding: 12px;
+  border-radius: 8px;
+  overflow-x: auto;
+}
+
+.tarjetas.sin-margen { margin-bottom: 0; }
+
+.referencia {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--tinta-2);
+  border-top: 1px solid var(--linea);
+  padding-top: 14px;
+  margin: 14px 0 0;
+}
+.referencia + .explicacion { border-top: none; padding-top: 0; }
