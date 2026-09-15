@@ -1,3 +1,5 @@
+export const meta = { titulo: "Tablero", orden: 1 };
+
 import { useEffect, useState } from "react";
 import {
   Bar,
@@ -9,7 +11,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { getData, getStats } from "./api.js";
+import { getData, getStats } from "../api.js";
 
 const SERIE = "#2a78d6";
 const SERIE_APAGADA = "#86b6ef";
@@ -42,7 +44,7 @@ function TooltipPrecio({ active, payload, label, sufijo = "" }) {
   );
 }
 
-export default function App() {
+export default function Tablero() {
   const [stats, setStats] = useState(null);
   const [filas, setFilas] = useState(null);
   const [colonia, setColonia] = useState("");
@@ -73,7 +75,7 @@ export default function App() {
 
   if (error) {
     return (
-      <div className="page">
+      <>
         <div className="estado error">
           <p>No se pudo hablar con la API: {error}</p>
           <p>
@@ -81,27 +83,22 @@ export default function App() {
             consola del navegador no muestre un error de CORS.
           </p>
         </div>
-      </div>
+      </>
     );
   }
 
   if (cargando && !stats) {
-    return (
-      <div className="page">
-        <div className="estado">Cargando datos...</div>
-      </div>
-    );
+    return <div className="estado">Cargando datos...</div>;
   }
 
   const colonias = stats.by_neighborhood.map((d) => d.neighborhood).sort();
   const alcance = stats.scope ? `la colonia ${stats.scope}` : "las 1,460 casas";
 
   return (
-    <div className="page">
-      <header>
-        <h1>Tablero de precios de vivienda</h1>
-        <p>Ames, Iowa &middot; {miles(stats.count)} registros en el alcance actual</p>
-      </header>
+    <>
+      <p className="subtitulo-vista">
+        {miles(stats.count)} registros en el alcance actual
+      </p>
 
       {/* Los filtros van en una sola fila, arriba de todo lo que afectan. */}
       <div className="filtros">
@@ -300,6 +297,6 @@ export default function App() {
           </div>
         )}
       </div>
-    </div>
+    </>
   );
 }
